@@ -14,13 +14,18 @@ interface QuiltGridProps {
 
 const QuiltGrid = ({ squares, onPurchaseClick }: QuiltGridProps) => {
   const getSquareImage = (square: QuiltSquare) => {
-    if (square.photos && square.photos.length > 0) {
-      return square.photos[0];
+    try {
+      if (square.photos && square.photos.length > 0) {
+        return square.photos[0];
+      }
+      if (square.tier === 'standard') {
+        return getRandomQuiltImage();
+      }
+      return null;
+    } catch (error) {
+      console.error("Error in getSquareImage:", error);
+      return getRandomQuiltImage(); // Fallback to a random image
     }
-    if (square.tier === 'standard') {
-      return getRandomQuiltImage();
-    }
-    return null;
   };
 
   const getPlaceholderStyles = () => {
@@ -31,7 +36,7 @@ const QuiltGrid = ({ squares, onPurchaseClick }: QuiltGridProps) => {
     <div className="bg-gradient-to-br from-amber-700 to-amber-800 p-8 rounded-xl">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {squares.map((square) => (
-          <Dialog key={square.id}>
+          <Dialog key={square.id || `square-${Math.random()}`}>
             <DialogTrigger asChild>
               <Card className={`cursor-pointer hover:scale-105 transition-transform ${
                 square.isPlaceholder ? getPlaceholderStyles() : getTierStyles(square.tier)
@@ -55,30 +60,30 @@ const QuiltGrid = ({ squares, onPurchaseClick }: QuiltGridProps) => {
                   <h4 className={`font-bold mb-1 text-sm ${
                     square.isPlaceholder ? 'text-amber-800 text-base' : 'text-amber-900'
                   }`}>
-                    {square.honoreeName}
+                    {square.honoreeName || "Honoree"}
                   </h4>
                   <p className={`text-xs mb-1 ${
                     square.isPlaceholder ? 'text-amber-700 font-medium' : 'text-gray-700'
                   }`}>
-                    {square.isPlaceholder ? square.tribute.substring(0, 60) + '...' : square.tribute.substring(0, 40) + '...'}
+                    {square.tribute ? (square.isPlaceholder ? square.tribute.substring(0, 60) + '...' : square.tribute.substring(0, 40) + '...') : "Tribute"}
                   </p>
                   <p className={`text-xs ${
                     square.isPlaceholder ? 'text-amber-600 font-semibold' : 'text-gray-600'
                   }`}>
-                    {square.purchaserName}
+                    {square.purchaserName || "Purchaser"}
                   </p>
                   <Badge className={`mt-2 text-xs font-bold ${
                     square.isPlaceholder ? 'bg-amber-600 hover:bg-amber-700 px-4 py-1' : 
                     square.tier === 'founder' ? 'bg-red-800' : 'bg-amber-800'
                   }`}>
-                    {square.isPlaceholder ? 'START HERE' : square.tier.toUpperCase()}
+                    {square.isPlaceholder ? 'START HERE' : (square.tier || "standard").toUpperCase()}
                   </Badge>
                 </CardContent>
               </Card>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle className="text-2xl text-amber-800">{square.honoreeName}</DialogTitle>
+                <DialogTitle className="text-2xl text-amber-800">{square.honoreeName || "Honoree"}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 {square.isPlaceholder ? (
@@ -110,12 +115,12 @@ const QuiltGrid = ({ squares, onPurchaseClick }: QuiltGridProps) => {
                 ) : (
                   <>
                     <Badge className={`w-fit ${square.tier === 'founder' ? 'bg-red-800' : 'bg-amber-800'}`}>
-                      {square.tier.toUpperCase()} SQUARE
+                      {(square.tier || "standard").toUpperCase()} SQUARE
                     </Badge>
                     
                     <div className="space-y-2">
                       <h4 className="font-semibold">Photos:</h4>
-                      {square.tier === 'legacy' && square.photos.length > 1 ? (
+                      {square.tier === 'legacy' && square.photos && square.photos.length > 1 ? (
                         <Carousel className="w-full max-w-xs mx-auto">
                           <CarouselContent>
                             {square.photos.map((photo: string, photoIndex: number) => (
@@ -150,11 +155,11 @@ const QuiltGrid = ({ squares, onPurchaseClick }: QuiltGridProps) => {
                     
                     <div>
                       <h4 className="font-semibold mb-2">Tribute:</h4>
-                      <p className="text-gray-700">{square.tribute}</p>
+                      <p className="text-gray-700">{square.tribute || "No tribute provided."}</p>
                     </div>
                     <div>
-                      <p><strong>Honored by:</strong> {square.purchaserName}</p>
-                      <p><strong>Date Added:</strong> {square.date}</p>
+                      <p><strong>Honored by:</strong> {square.purchaserName || "Anonymous"}</p>
+                      <p><strong>Date Added:</strong> {square.date || new Date().toISOString().split('T')[0]}</p>
                     </div>
                   </>
                 )}
