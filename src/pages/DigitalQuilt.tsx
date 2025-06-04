@@ -15,102 +15,76 @@ const DigitalQuilt = () => {
   const [showOrderForm, setShowOrderForm] = useState(false);
 
   const shuffleAndPrioritize = () => {
-    try {
-      // Create copies of the arrays to avoid mutation issues
-      const legacy = [...quiltSquares.filter(s => s.tier === 'legacy')];
-      const premium = [...quiltSquares.filter(s => s.tier === 'premium')];
-      const standard = [...quiltSquares.filter(s => s.tier === 'standard')];
+    const legacy = quiltSquares.filter(s => s.tier === 'legacy');
+    const premium = quiltSquares.filter(s => s.tier === 'premium');
+    const standard = quiltSquares.filter(s => s.tier === 'standard');
+    
+    // Shuffle each tier
+    const shuffleLegacy = [...legacy].sort(() => Math.random() - 0.5);
+    const shufflePremium = [...premium].sort(() => Math.random() - 0.5);
+    const shuffleStandard = [...standard].sort(() => Math.random() - 0.5);
+    
+    // Create rows with prioritized distribution (5 squares per row)
+    const rowSize = 5;
+    const arrangedSquares: QuiltSquare[] = [];
+    
+    let legacyIndex = 0;
+    let premiumIndex = 0;
+    let standardIndex = 0;
+    
+    // Calculate total squares needed
+    const totalSquares = legacy.length + premium.length + standard.length + 1; // +1 for placeholder
+    const totalRows = Math.ceil(totalSquares / rowSize);
+    
+    for (let row = 0; row < totalRows; row++) {
+      const rowSquares: QuiltSquare[] = [];
       
-      // Shuffle each tier safely
-      const shuffleLegacy = [...legacy].sort(() => 0.5 - Math.random());
-      const shufflePremium = [...premium].sort(() => 0.5 - Math.random());
-      const shuffleStandard = [...standard].sort(() => 0.5 - Math.random());
-      
-      // Create rows with prioritized distribution (5 squares per row)
-      const rowSize = 5;
-      const arrangedSquares: QuiltSquare[] = [];
-      
-      let legacyIndex = 0;
-      let premiumIndex = 0;
-      let standardIndex = 0;
-      
-      // Calculate total squares needed
-      const totalSquares = legacy.length + premium.length + standard.length + 1; // +1 for placeholder
-      const totalRows = Math.ceil(totalSquares / rowSize);
-      
-      for (let row = 0; row < totalRows; row++) {
-        const rowSquares: QuiltSquare[] = [];
-        
-        // Fill each row with priority: Legacy > Premium > Standard
-        for (let col = 0; col < rowSize; col++) {
-          if (legacyIndex < shuffleLegacy.length) {
-            rowSquares.push(shuffleLegacy[legacyIndex]);
-            legacyIndex++;
-          } else if (premiumIndex < shufflePremium.length) {
-            rowSquares.push(shufflePremium[premiumIndex]);
-            premiumIndex++;
-          } else if (standardIndex < shuffleStandard.length) {
-            rowSquares.push(shuffleStandard[standardIndex]);
-            standardIndex++;
-          }
+      // Fill each row with priority: Legacy > Premium > Standard
+      for (let col = 0; col < rowSize; col++) {
+        if (legacyIndex < shuffleLegacy.length) {
+          rowSquares.push(shuffleLegacy[legacyIndex]);
+          legacyIndex++;
+        } else if (premiumIndex < shufflePremium.length) {
+          rowSquares.push(shufflePremium[premiumIndex]);
+          premiumIndex++;
+        } else if (standardIndex < shuffleStandard.length) {
+          rowSquares.push(shuffleStandard[standardIndex]);
+          standardIndex++;
         }
-        
-        // Shuffle the row safely
-        const shuffledRow = [...rowSquares].sort(() => 0.5 - Math.random());
-        arrangedSquares.push(...shuffledRow);
       }
       
-      // Insert placeholder at a random position
-      const randomIndex = Math.floor(Math.random() * (arrangedSquares.length + 1));
-      const finalSquares = [...arrangedSquares];
-      finalSquares.splice(randomIndex, 0, placeholderSquare);
-      
-      setSortedSquares(finalSquares);
-    } catch (error) {
-      console.error("Error in shuffleAndPrioritize:", error);
-      // Fallback to a simpler approach if the complex logic fails
-      const allSquares = [...quiltSquares, placeholderSquare];
-      setSortedSquares(allSquares);
+      // Shuffle the row to randomize the order while maintaining tier priority
+      const shuffledRow = rowSquares.sort(() => Math.random() - 0.5);
+      arrangedSquares.push(...shuffledRow);
     }
+    
+    // Insert placeholder at a random position
+    const randomIndex = Math.floor(Math.random() * (arrangedSquares.length + 1));
+    arrangedSquares.splice(randomIndex, 0, placeholderSquare);
+    
+    setSortedSquares(arrangedSquares);
   };
 
   useEffect(() => {
-    try {
-      shuffleAndPrioritize();
-    } catch (error) {
-      console.error("Error in useEffect:", error);
-      // Fallback if the main function fails
-      setSortedSquares([...quiltSquares, placeholderSquare]);
-    }
+    shuffleAndPrioritize();
   }, []);
 
   const filteredSquares = sortedSquares.filter(square => {
-    try {
-      // Always show placeholder square unless specifically filtering it out
-      if (square.isPlaceholder && tierFilter !== 'all') {
-        return tierFilter === 'standard';
-      }
-      
-      const matchesSearch = square.honoreeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          square.purchaserName.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesTier = tierFilter === 'all' || square.tier === tierFilter;
-      return matchesSearch && matchesTier;
-    } catch (error) {
-      console.error("Error in filteredSquares:", error);
-      return true; // Include all squares if filtering fails
+    // Always show placeholder square unless specifically filtering it out
+    if (square.isPlaceholder && tierFilter !== 'all') {
+      return tierFilter === 'standard';
     }
+    
+    const matchesSearch = square.honoreeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         square.purchaserName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTier = tierFilter === 'all' || square.tier === tierFilter;
+    return matchesSearch && matchesTier;
   });
 
   const handleRefresh = () => {
-    try {
-      shuffleAndPrioritize();
-      setSearchTerm('');
-      setTierFilter('all');
-    } catch (error) {
-      console.error("Error in handleRefresh:", error);
-      // Fallback if refresh fails
-      setSortedSquares([...quiltSquares, placeholderSquare]);
-    }
+    shuffleAndPrioritize();
+    setSearchTerm('');
+    setTierFilter('all');
   };
 
   return (
@@ -136,7 +110,7 @@ const DigitalQuilt = () => {
         <StatsSection />
 
         <QuiltGrid 
-          squares={filteredSquares.length > 0 ? filteredSquares : [placeholderSquare]} 
+          squares={filteredSquares} 
           onPurchaseClick={() => setShowOrderForm(true)}
         />
 
